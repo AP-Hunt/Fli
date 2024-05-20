@@ -111,3 +111,14 @@ let ``Hello World with executing program throws exception with unknown Verb`` ()
     with :? ArgumentException as ex ->
         ex.Message
         |> should equal ("Unknown verb 'print'. Possible verbs on 'cmd.exe': open, runas, runasuser")
+
+[<Test>]
+[<Platform("Win")>]
+let ``Passing data to a progrma on stdin`` () =
+    cli {
+        Exec "Write-Output"
+        Input "Test"
+    }
+    |> Command.execute
+    |> Output.toText
+    |> should equal "Test"
