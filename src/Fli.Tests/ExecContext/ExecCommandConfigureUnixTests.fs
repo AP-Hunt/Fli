@@ -1,43 +1,69 @@
-﻿module Fli.Tests.ShellContext.ShellCommandConfigureTests
+module Fli.Tests.ExecContext.ExecCommandConfigureUnixTests
 
-open Fli
 open NUnit.Framework
 open FsUnit
+open Fli
+open System
 open System.Collections.Generic
 open System.Text
 
-
 [<Test>]
-let ``Check FileName in ProcessStartInfo with CMD Shell`` () =
-    cli { Shell CMD }
+[<Platform("Linux,Unix,MacOsX")>]
+let ``Check FileName in ProcessStartInfo Exec program`` () =
+    cli { Exec "bash" }
     |> Command.buildProcess
     |> (fun p -> p.FileName)
-    |> should equal "cmd.exe"
+    |> should equal "bash"
 
 [<Test>]
-let ``Check Argument in ProcessStartInfo with Command`` () =
+[<Platform("Linux,Unix,MacOsX")>]
+let ``Check Arguments in ProcessStartInfo with Arguments`` () =
     cli {
-        Shell PS
-        Command "echo Hello World!"
+        Exec "bash"
+        Arguments "-c echo Hello World!"
     }
     |> Command.buildProcess
     |> _.Arguments
-    |> should equal "-Command echo Hello World!"
+    |> should equal "-c echo Hello World!"
 
 [<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
 let ``Check WorkingDirectory in ProcessStartInfo with WorkingDirectory`` () =
     cli {
-        Shell CMD
-        WorkingDirectory @"C:\Users"
+        Exec "bash"
+        WorkingDirectory @"/etc/"
     }
     |> Command.buildProcess
     |> _.WorkingDirectory
-    |> should equal @"C:\Users"
+    |> should equal @"/etc/"
 
 [<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
+let ``Check WindowStyle in ProcessStartInfo with WorkingDirectory`` () =
+    cli {
+        Exec "bash"
+        WindowStyle Normal
+    }
+    |> Command.buildProcess
+    |> _.WindowStyle
+    |> should equal Diagnostics.ProcessWindowStyle.Normal
+
+[<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
+let ``Check UserName in ProcessStartInfo with Username`` () =
+    cli {
+        Exec "bash"
+        Username "root"
+    }
+    |> Command.buildProcess
+    |> _.UserName
+    |> should equal "root"
+
+[<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
 let ``Check Environment in ProcessStartInfo with single environment variable`` () =
     cli {
-        Shell CMD
+        Exec "bash"
         EnvironmentVariable("Fli", "test")
     }
     |> Command.buildProcess
@@ -45,10 +71,11 @@ let ``Check Environment in ProcessStartInfo with single environment variable`` (
     |> should be True
 
 [<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
 let ``Check Environment in ProcessStartInfo with multiple environment variables`` () =
     let config =
         cli {
-            Shell CMD
+            Exec "bash"
             EnvironmentVariables [ ("Fli", "test"); ("Fli.Test", "test") ]
         }
         |> Command.buildProcess
@@ -57,10 +84,11 @@ let ``Check Environment in ProcessStartInfo with multiple environment variables`
     config.Environment.Contains(KeyValuePair("Fli.Test", "test")) |> should be True
 
 [<Test>]
+[<Platform("Linux,Unix,MacOsX")>]
 let ``Check StandardOutputEncoding & StandardErrorEncoding with setting Encoding`` () =
     let config =
         cli {
-            Shell CMD
+            Exec "bash"
             Encoding Encoding.UTF8
         }
         |> Command.buildProcess
@@ -69,13 +97,15 @@ let ``Check StandardOutputEncoding & StandardErrorEncoding with setting Encoding
     config.StandardErrorEncoding |> should equal Encoding.UTF8
 
 [<Test>]
-let ``Check all possible values in ProcessStartInfo`` () =
+[<Platform("Linux,Unix,MacOsX")>]
+let ``Check all possible values in ProcessStartInfo for windows`` () =
     let config =
         cli {
-            Shell BASH
-            Command "echo Hello World! €"
-            Input "echo TestInput"
-            WorkingDirectory @"C:\Users"
+            Exec "bash"
+            Arguments "--help"
+            Output "./Users/test.txt"
+            WorkingDirectory "./Users"
+            Username "admin"
             EnvironmentVariable("Fli", "test")
             EnvironmentVariables [ ("Fli.Test", "test") ]
             Encoding Encoding.UTF8
@@ -83,8 +113,10 @@ let ``Check all possible values in ProcessStartInfo`` () =
         |> Command.buildProcess
 
     config.FileName |> should equal "bash"
-    config.Arguments |> should equal "-c \"echo Hello World! €\""
-    config.WorkingDirectory |> should equal @"C:\Users"
+    config.Arguments |> should equal "--help"
+    config.WorkingDirectory |> should equal "./Users"
+    config.Verb |> should equal String.Empty
+    config.UserName |> should equal "admin"
     config.Environment.Contains(KeyValuePair("Fli", "test")) |> should be True
     config.Environment.Contains(KeyValuePair("Fli.Test", "test")) |> should be True
     config.StandardOutputEncoding |> should equal Encoding.UTF8
